@@ -1,0 +1,20 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/ShishirSuman999/Zynk#readme",
+  "bugs": {
+    "url": "https://github.com/ShishirSuman999/Zynk/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShishirSuman999/Zynk.git"
+  },
+  "license": "ISC",
+  "author": "Shishir Suman",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
