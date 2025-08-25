@@ -1,4 +1,4 @@
-import { Schema } from "mongoose";
+import { Schema } from "mongoose"
 
 const meetingSchema = new Schema({
     userId: { type: String, required: true },
