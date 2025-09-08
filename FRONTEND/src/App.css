@@ -2,6 +2,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .landingPageContainer {
@@ -44,7 +45,7 @@
 }
 
 .landingMainContainer > div:nth-child(1) {
-  font-size: 1.8rem;
+  font-size: 1.7rem;
 }
 
 .landingMainContainer > div:nth-child(1) div[role = "button"] {
