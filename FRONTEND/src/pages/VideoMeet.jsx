@@ -1,7 +1,19 @@
 import * as React from "react"
-import "../styles/VideoMeet.css"
+import { io } from "socket.io-client"
 import TextField from "@mui/material/TextField"
 import Button from "@mui/material/Button"
+import IconButton from "@mui/material/IconButton"
+import VideocamIcon from "@mui/icons-material/Videocam"
+import VideocamOffIcon from "@mui/icons-material/VideocamOff"
+import MicIcon from "@mui/icons-material/Mic"
+import MicOffIcon from "@mui/icons-material/MicOff"
+import ScreenShareIcon from "@mui/icons-material/ScreenShare"
+import StopScreenShareIcon from "@mui/icons-material/StopScreenShare"
+import SendIcon from "@mui/icons-material/Send"
+import CallEndIcon from "@mui/icons-material/CallEnd"
+import Badge from "@mui/material/Badge"
+import ChatIcon from "@mui/icons-material/Chat"
+import styles from "../styles/VideoMeet.module.css"
 
 const server_url = "http://localhost:3000"
 
@@ -26,7 +38,7 @@ export default function VideoMeet() {
 
   let [screen, setScreen] = React.useState()
 
-  let [showModal, setShowModal] = React.useState()
+  let [showModal, setShowModal] = React.useState(true)
 
   let [screenAvailable, setScreenAvailable] = React.useState()
 
@@ -34,7 +46,7 @@ export default function VideoMeet() {
 
   let [message, setMessage] = React.useState("")
 
-  let [newMessages, setNewMessages] = React.useState(0)
+  let [newMessages, setNewMessages] = React.useState(3)
 
   let [askForUsername, setAskForUsername] = React.useState(true)
 
@@ -99,7 +111,7 @@ export default function VideoMeet() {
       connections[id].createOffer()
       .then((description) => {
         connections[id].setLocalDescription(description)
-        socketRef.current.emit("signal", id, JSON.stringify({"sdp": connections[id].localDescription()}))
+        socketRef.current.emit("signal", id, JSON.stringify({ "sdp": connections[id].localDescription }))
       }).catch(e => console.log(e))
     }
     stream.getTracks().forEach(track => track.onended = () => {
@@ -122,7 +134,7 @@ export default function VideoMeet() {
         connections[id].createOffer().then((description) => {
           connections[id].setLocalDescription(description)
           .then(() => {
-            socketRef.current.emit("signal", id, JSON.stringify({"sdp": connections[id].localDescription()}))
+            socketRef.current.emit("signal", id, JSON.stringify({ "sdp": connections[id].localDescription }))
           }).catch(e => console.log(e))
         })
       }
@@ -173,10 +185,10 @@ export default function VideoMeet() {
         .then(() => {
           if (signal.sdp.type === "offer") {
             connections[fromId].createAnswer()
-            .then((desription) => {
+            .then((description) => {
               connections[fromId].setLocalDescription(description)
               .then(() => {
-                socketIdRef.current.emit("signal", fromId, JSON.stringify({ "sdp": connections[fromId].localDescription }))
+                socketRef.current.emit("signal", fromId, JSON.stringify({ "sdp": connections[fromId].localDescription }))
               }).catch(err => console.log(err))
             }).catch(err => console.log(err))
           }
@@ -201,7 +213,7 @@ export default function VideoMeet() {
       socketRef.current.on("user-left", (id) => {
         setVideo((videos) => videos.filter((video) => video.socketId !== id))
       })
-      socketRef.current.on("user-join", (id, clients) => {
+      socketRef.current.on("user-joined", (id, clients) => {
         clients.forEach((socketListId) => {
           connections[socketListId] = new RTCPeerConnection(
             peerConfigConnections
@@ -275,12 +287,78 @@ export default function VideoMeet() {
   let getMedia = () => {
     setVideo(videoAvailable)
     setAudio(audioAvailable)
-    // connectToSocketServer()
+    connectToSocketServer()
   }
 
   let connect = () => {
     setAskForUsername(false)
     getMedia()
+  }
+
+  let handleVideo = () => {
+    setVideo(!video)
+  }
+
+  let handleAudio = () => {
+    setAudio(!audio)
+  }
+
+  let getDisplayMediaSuccess = (stream) => {
+    try {
+      window.localStream.getTracks().forEach((track) => track.stop())
+    } catch (error) {
+      console.log(error)
+    }
+    window.localStream = stream
+    localVideoRef.current.srcObject = stream
+    for (let id in connections) {
+      if (id === socketIdRef.current) continue
+      connections[id].addStream(window.localStream)
+      connections[id].createOffer()
+      .then((description) => {
+        connections[id].setLocalDescription(description)
+        socketRef.current.emit("signal", id, JSON.stringify({ "sdp": connections[id].localDescription }))
+      })
+      .catch(err => console.log(err))
+    }
+    stream.getTracks().forEach(track => track.onended = () => {
+      setScreen(false)
+      try {
+        let tracks = localVideoRef.current.srcObject.getTracks()
+        tracks.forEach(track => track.stop())
+      } catch (error) {
+        console.log(error)
+      }
+      let blackSilence = (...args) => new MediaStream([black(...args), silence()])
+      window.localStream = blackSilence()
+      localVideoRef.current.srcObject = window.localStream
+
+      getUserMedia()
+    })
+  }
+
+  let getDisplayMedia = () => {
+    if (screen) {
+      if (navigator.mediaDevices.getDisplayMedia) {
+        navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+        .then(getDisplayMediaSuccess)
+        .then((stream) => {
+        })
+        .catch(err => console.log(err))
+      }
+    }
+  }
+
+  React.useEffect(() => {
+    if (screen !== undefined) getDisplayMedia()
+  }, [screen])
+
+  let handleScreen = () => {
+    setScreen(!screen)
+  }
+
+  let sendMessage = () => {
+    
   }
 
   return (
@@ -298,12 +376,51 @@ export default function VideoMeet() {
         </div>
       ) : (
         <>
-          <video ref={localVideoRef} autoPlay muted></video>
-          {videos.map((video) => {
-            <div key={video.socketId}></div>
-          })}
+          <div className={styles.meetVideoContainer}>
+            {showModal ? <div className={styles.chatRoom}>
+              <div className={styles.chatContainer}>
+                <h1>Chat</h1>
+                <div className={styles.chattingArea}>
+                  <TextField id="standard-basic" label="Enter your Chat" variant="standard" onClick={sendMessage} />
+                  <Button variant="contained">Send</Button>
+                </div>
+              </div>
+            </div> : 
+            <></>}
+            <div className={styles.buttonContainers}>
+              <IconButton onClick={handleVideo} style={{ color: "white" }}>
+                {(video === true) ? <VideocamIcon /> : <VideocamOffIcon />}
+              </IconButton>
+              <IconButton style={{ color: "red" }}>
+                <CallEndIcon />
+              </IconButton>
+              <IconButton onClick={handleAudio} style={{ color: "white" }}>
+                {(audio === true) ? <MicIcon /> : <MicOffIcon />}
+              </IconButton>
+              {(screenAvailable === true) ? 
+                <IconButton onClick={handleScreen} style={{ color: "white" }}>
+                  {screen === true ? <ScreenShareIcon /> : <StopScreenShareIcon />}
+                </IconButton> : <></>
+              }
+              <Badge badgeContent={newMessages} max={99} color="primary">
+                <IconButton onClick={() => setShowModal(!showModal)} style={{color: "white"}}>
+                  <ChatIcon />
+                </IconButton>
+              </Badge>
+            </div>
+            <video className={styles.meetUserVideo} ref={localVideoRef} autoPlay muted></video>
+            <div className={styles.conferenceView}>
+              {videos.map((video) => (
+                <div key={video.socketId}>
+                  <video data-socket={video.socketId} ref={ref => {
+                    if (ref && video.stream) ref.srcObject = video.stream
+                  }} autoPlay></video>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
     </div>
-  );
+  )
 }
