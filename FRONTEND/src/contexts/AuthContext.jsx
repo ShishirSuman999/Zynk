@@ -45,8 +45,21 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  let getUserHistory = async () => {
+    try {
+      let request = await client.get("/get_all_activity", {
+        params: {
+          token: localStorage.getItem("token"),
+        },
+      })
+      return request.data
+    } catch (error) {
+      throw error
+    }
+  }
+
   const data = {
-    userData, setUserData, handleRegister, handleLogin
+    userData, setUserData, handleRegister, handleLogin, getUserHistory
   }
 
   return (
