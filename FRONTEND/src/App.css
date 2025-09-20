@@ -66,3 +66,39 @@
   height: 70vh;
   width: auto;
 }
+
+.navBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 20px;
+}
+
+.meetContainer {
+  display: flex;
+  padding-inline: 50px;
+  height: 80vh;
+  gap: 5vw;
+  justify-content: center;
+}
+
+.leftPanel {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.rightPanel {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  margin-top: 50px;
+}
+
+.rightPanel > img {
+  width: 45vw;
+  height: auto;
+  border-radius: 20px;
+}

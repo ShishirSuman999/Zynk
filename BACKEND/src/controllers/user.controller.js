@@ -1,5 +1,7 @@
 import httpStatus from "http-status"
+import mongoose from "mongoose"
 import { User } from "../models/user.model.js"
+import { Meeting } from "../models/meeting.model.js"
 import bcrypt, { hash } from "bcrypt"
 import crypto from "crypto"
 
@@ -45,4 +47,30 @@ const register = async (req, res) => {
     }
 }
 
-export { login, register }
+const getUserHistory = async (req, res) => {
+    const {token} = req.query
+    try {
+        const user = await User.findOne({token: token})
+        const meeting = await Meeting.find({user_id: user.username})
+        res.json(meeting)
+    } catch (error) {
+        res.json({message: `SOMETHING WENT WRONG: ${error}`})
+    }
+}
+
+const addToHistory = async (req, res) => {
+    const {token, meeting_code} = req.body
+    try {
+        const user = await User.findOne({token: token})
+        const newMeeting = await Meeting({
+            user_id: user.username,
+            meetingCode: meeting_code,
+        })
+        await newMeeting.save()
+        res.status(httpStatus.CREATED).json({message: "Meeting added to history"})
+    } catch (error) {
+        res.json({message: `SOMETHING WENT WRONG: ${error}`})
+    }
+}
+
+export { login, register, getUserHistory, addToHistory }
