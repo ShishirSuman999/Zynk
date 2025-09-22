@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import httpStatus from "http-status"
 
 export const AuthContext = createContext({})
+export default AuthContext
 
 const client = axios.create({
   baseURL: "http://localhost:3000/api/v1/users",
@@ -45,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  let getHistoryOfUser = async () => {
+  let getUserHistory = async () => {
     try {
       let request = await client.get("/get_all_activity", {
         params: {
@@ -71,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   const data = {
-    userData, setUserData, handleRegister, handleLogin, getHistoryOfUser, addToUserHistory
+    userData, setUserData, handleRegister, handleLogin, getUserHistory, addToUserHistory
   }
 
   return (
